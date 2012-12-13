@@ -63,6 +63,10 @@ df = pandas.read_csv('allbilling.csv')
 # Group the data by the column Group Name
 grouped = df.groupby('cGroupName')
 
+# Create Reports directory
+if not os.path.exists('reports'):
+		os.mkdir('reports')
+
 # Iterate through data by Group Name
 for cGroupName, group in grouped:
 	folder_name = cGroupName + '_' + str(datestamp)
@@ -165,3 +169,5 @@ for root, dirs, files in os.walk('reports', topdown=False):
 		os.remove(os.path.join(root, name))
 	for name in dirs:
 		os.rmdir(os.path.join(root, name))
+
+os.remove('allbilling.csv')
