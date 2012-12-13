@@ -43,9 +43,12 @@ def send_to_hod(billCode, filename):
 	addresses = csv.DictReader(open(address_book, 'rb'), delimiter=',')
 	
 	for line in addresses:
-		if line['billingCode'] == billCode:
-			send_mail('jivory@bount.hants.sch.uk', 'jfroelich@bohunt.hants.sch.uk', 'Printing Report', 'Attached is the monthly printing report for ' + billCode + line['userName'], filename, "bs-exch-02")
-	
+		if (line['billingCode'] == billCode) and (line['userName'] != ''):
+			send_mail('jivory@bohunt.hants.sch.uk', line['userName'] + '@bohunt.hants.sch.uk', 'Printing Report', 'Attached is the monthly printing report for ' + billCode + line['userName'], filename, "bs-exch-02")
+
+# Create Reports directory
+if not os.path.exists('reports'):
+		os.mkdir('reports')
 
 # Get last months date
 today = datetime.date.today()
@@ -63,19 +66,19 @@ df = pandas.read_csv('allbilling.csv')
 # Group the data by the column Group Name
 grouped = df.groupby('cGroupName')
 
-# Create Reports directory
-if not os.path.exists('reports'):
-		os.mkdir('reports')
-
 # Iterate through data by Group Name
 for cGroupName, group in grouped:
 	folder_name = cGroupName + '_' + str(datestamp)
 	if not os.path.exists('reports/%s' % folder_name):
 		os.mkdir('reports/%s' % folder_name)
 		os.mkdir('reports/%s/source' % folder_name)
-	group.to_csv('reports/%s/source/detail.csv' % folder_name)
+	csvDetailWrite = open('reports/%s/source/detail.csv' % folder_name, 'wb')
+	group.to_csv(csvDetailWrite, float_format='%.2f')
+	csvDetailWrite.close()
 	summary = pandas.pivot_table(group, values='cAmount', rows='cUserWhoPrinted', aggfunc=sum)
-	summary.to_csv('reports/%s/source/summary.csv' % folder_name)
+	cvsBillSummaryWrite = open('reports/%s/source/summary.csv' % folder_name, 'wb')
+	summary.to_csv(cvsBillSummaryWrite, float_format='%.2f')
+	cvsBillSummaryWrite.close()
 	summary.plot(kind='bar')
 	plt.title(cGroupName + ' ' + str(datestamp))
 	plt.ylabel('Money Spent')
@@ -84,13 +87,17 @@ for cGroupName, group in grouped:
 	plt.savefig('reports/%s/source/summary.png' % folder_name)
 	plt.clf()
 	
-	totalReader = csv.reader(open('reports/%s/source/summary.csv' % folder_name))
+	csvBillSummaryRead = open('reports/%s/source/summary.csv' % folder_name, 'rb')
+	totalReader = csv.reader(csvBillSummaryRead)
 	totalSpent = 0
 	for row in totalReader:
 		totalSpent += float(row[1])
+	csvBillSummaryRead.close()
 	
-	reader = csv.reader(open('reports/%s/source/summary.csv' % folder_name))
-	reader2 = csv.reader(open('reports/%s/source/detail.csv' % folder_name))
+	csvBillSummaryRead = open('reports/%s/source/summary.csv' % folder_name, 'rb')
+	reader = csv.reader(csvBillSummaryRead)
+	csvDetailRead = open('reports/%s/source/detail.csv' % folder_name, 'rb')
+	reader2 = csv.reader(csvDetailRead)
 	htmlfile = open('reports/%s/report.html' % folder_name, 'w')
 	htmlfile.write('<center>')
 	htmlfile.write('<h1>Printing Report for %s</h1>' % cGroupName)
@@ -132,6 +139,8 @@ for cGroupName, group in grouped:
 	htmlfile.write('</center>')
 	htmlfile.close()
 	csvsummary.writerow([cGroupName, totalSpent])
+	csvDetailRead.close()
+	csvBillSummaryRead.close()
 	
 	target_dir = 'reports/%s' % folder_name
 	zip = zipfile.ZipFile('reports/' + cGroupName + '_PrintReport_' + str(datestamp) + '.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -152,8 +161,6 @@ for cGroupName, group in grouped:
 	send_to_hod(cGroupName, 'reports/' + cGroupName + '_PrintReport_' + str(datestamp) + '.zip')
 	
 csvSummaryFile.close()
-	
-send_mail('jivory@bohunt.hants.sch.uk', 'jfroelich@bohunt.hants.sch.uk', 'Printing Report Summary for' + str(datestamp), 'Here is the monthly Printing report summary for ' + str(datestamp), 'reports/print_summary_' + str(datestamp) + '.csv', "bs-exch-02")
 
 target_dir = 'reports'
 zip = zipfile.ZipFile('All_PrintReports_' + str(datestamp) + '.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -164,10 +171,15 @@ for base, dirs, files in os.walk(target_dir):
 		zip.write(fn, fn[rootlen:])
 zip.close()
 
+send_mail('jivory@bohunt.hants.sch.uk', 'nleete@bohunt.hants.sch.uk', 'Printing Report Summary for ' + str(datestamp), 'Here is the monthly Printing report summary for ' + str(datestamp), 'reports/print_summary_' + str(datestamp) + '.csv', "bs-exch-02")
+send_mail('jivory@bohunt.hants.sch.uk', 'jivory@bohunt.hants.sch.uk', 'Printing Reports for ' + str(datestamp), 'Here is the monthly Printing reports.  Enjoy!', 'All_PrintReports_' + str(datestamp) + '.zip', "bs-exch-02")
+
 for root, dirs, files in os.walk('reports', topdown=False):
 	for name in files:
 		os.remove(os.path.join(root, name))
 	for name in dirs:
 		os.rmdir(os.path.join(root, name))
 
+os.rmdir('reports')
 os.remove('allbilling.csv')
+os.remove('All_PrintReports_' + str(datestamp) + '.zip')
