@@ -174,6 +174,7 @@ zip.close()
 send_mail('jivory@bohunt.hants.sch.uk', 'nleete@bohunt.hants.sch.uk', 'Printing Report Summary for ' + str(datestamp), 'Here is the monthly Printing report summary for ' + str(datestamp), 'reports/print_summary_' + str(datestamp) + '.csv', "bs-exch-02")
 send_mail('jivory@bohunt.hants.sch.uk', 'jivory@bohunt.hants.sch.uk', 'Printing Reports for ' + str(datestamp), 'Here is the monthly Printing reports.  Enjoy!', 'All_PrintReports_' + str(datestamp) + '.zip', "bs-exch-02")
 
+# Clean up
 for root, dirs, files in os.walk('reports', topdown=False):
 	for name in files:
 		os.remove(os.path.join(root, name))
