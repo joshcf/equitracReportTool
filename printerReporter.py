@@ -1,8 +1,8 @@
-import sys
-import math
+#import sys
+#import math
 import pandas
 import matplotlib.pyplot as plt
-import glob
+#import glob
 import os
 import csv
 import zipfile
@@ -14,7 +14,7 @@ from email.MIMEText import MIMEText
 from email.Utils import COMMASPACE, formatdate
 from email import Encoders
 
-def send_mail(send_from, send_to, subject, text, filename, server="bs-exch-02"):
+def send_mail(send_from, send_to, subject, text, filename, server):
     #assert type(send_to)==list
     #assert type(files)==list
 
@@ -44,7 +44,7 @@ def send_to_hod(billCode, filename):
 	
 	for line in addresses:
 		if (line['billingCode'] == billCode) and (line['userName'] != ''):
-			send_mail('jivory@bohunt.hants.sch.uk', line['userName'] + '@bohunt.hants.sch.uk', 'Printing Report', 'Attached is the monthly printing report for ' + billCode + line['userName'], filename, "bs-exch-02")
+			send_mail('jivory@bohunt.hants.sch.uk', line['userName'] + '@bohunt.hants.sch.uk', 'Printing Report', 'Attached is the monthly printing report for ' + billCode + line['userName'], filename, "email-01")
 
 # Create Reports directory
 if not os.path.exists('reports'):
@@ -171,10 +171,10 @@ for base, dirs, files in os.walk(target_dir):
 		zip.write(fn, fn[rootlen:])
 zip.close()
 
-send_mail('jivory@bohunt.hants.sch.uk', 'nleete@bohunt.hants.sch.uk', 'Printing Report Summary for ' + str(datestamp), 'Here is the monthly Printing report summary for ' + str(datestamp), 'reports/print_summary_' + str(datestamp) + '.csv', "bs-exch-02")
-send_mail('jivory@bohunt.hants.sch.uk', 'jivory@bohunt.hants.sch.uk', 'Printing Reports for ' + str(datestamp), 'Here is the monthly Printing reports.  Enjoy!', 'All_PrintReports_' + str(datestamp) + '.zip', "bs-exch-02")
+send_mail('jivory@bohunt.hants.sch.uk', 'nleete@bohunt.hants.sch.uk', 'Printing Report Summary for ' + str(datestamp), 'Here is the monthly Printing report summary for ' + str(datestamp), 'reports/print_summary_' + str(datestamp) + '.csv', "email-01")
+send_mail('jivory@bohunt.hants.sch.uk', 'jivory@bohunt.hants.sch.uk', 'Printing Reports for ' + str(datestamp), 'Here are the monthly Printing reports.  Enjoy!', 'All_PrintReports_' + str(datestamp) + '.zip', "email-01")
+send_mail('jivory@bohunt.hants.sch.uk', 'jfroelich@bohunt.hants.sch.uk', 'Printing Reports for ' + str(datestamp), 'Here are the monthly Printing reports.  Enjoy!', 'All_PrintReports_' + str(datestamp) + '.zip', "email-01")
 
-# Clean up
 for root, dirs, files in os.walk('reports', topdown=False):
 	for name in files:
 		os.remove(os.path.join(root, name))
